@@ -6,25 +6,15 @@ output: word_document
 
 #	1. Present your main research questions and hypotheses being tested in this study along with a concise rationale for each hypothesis.
 
-
-
 # 2. Describe the key variables specifying how they will be measured, how many levels they have, and how participants will be assigned (if relevant).
-
-
 
 # 3. Describe your precise rule(s) for including and/or excluding observations and/or participants.
 
-
-
 # 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.
-
-
 
 # 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size. 
 
-
 # References
-
 
 # Analysis code
 
@@ -138,8 +128,8 @@ n_gender <- c(sum(data_count$n[data_count$user_sex == "female"]),
               sum(data_count$n[data_count$user_sex != "female"]))
 
 # plotting format
-grey   = "#999999"
-yellow = "#E69F00"
+grey     = "#999999"
+yellow   = "#E69F00"
 cyanblue = "#56B4E9"
 
 # plot gender counts
