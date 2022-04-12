@@ -1,28 +1,38 @@
 ---
-title: "Pre-registration for Group [insert group number]"
-author: "1234567, 2345678, 3456789, 4567890, 09887653, 9876543" # replace with own GUIDs
+title: "Pre-registration for Group 14" 
+author: "2608549s, 9404607s, 2704012l, 2723274s, 2719030s, 22716710s" 
 output: word_document
 ---
 
-#	1. Present your main research questions and hypotheses being tested in this study along with a concise rationale for each hypothesis.
+# Questions
 
-# 2. Describe the key variables specifying how they will be measured, how many levels they have, and how participants will be assigned (if relevant).
+**#	1. Present your main research questions and hypotheses being tested in this study along with a concise rationale for each hypothesis.**
 
-# 3. Describe your precise rule(s) for including and/or excluding observations and/or participants.
+Main research questions : Do female students report more intrinsic goal orientation than students who do not report as female? 
+                          Is intrinsic goal orientation related to self-reported help-seeking in female students?
+  
+Correlation hypothesis  : Intrinsic goal orientation will have a positive correlation to self-reported help-seeking. 
+T-test hypothesis       : Female students will report more intrinsic goal orientation than students who do not report as female.  
 
-# 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.
+**# 2. Describe the key variables specifying how they will be measured, how many levels they have, and how participants will be assigned (if relevant).**
 
-# 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size. 
+**# 3. Describe your precise rule(s) for including and/or excluding observations and/or participants.**
+
+**# 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.**
+
+**# 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size.**
 
 # References
 
-# Analysis code
+# Analysis code: intro
 
 This template assumes that you will be running one t-test and a correlation, if you have decided to do something more complex then this template may not fit your needs. Some of the code has been completed for you to clean up the raw questionnaire output from Experimentum. Remember to knit the file after each step, it will make it easy to spot if you have made an error.
 
 Finally, remember that the pilot data is a small sample compared to the larger dataset that you will work with for the full quantitative report. There may be missing data or types of participants in the full data set that aren't present in this sample.
 
 **You can delete the above instructions before you knit and submit your final pre-reg**
+
+# Analysis code
 
 #### 1. Load in packages and data
 
@@ -38,6 +48,7 @@ demo <- read_csv("demographics_2021_pilot.csv")
 mslq <- read_csv("MSLQ_2021_pilot.csv")
 
 ```
+
 
 #### 2. Clean up the data
 
@@ -66,6 +77,7 @@ mslq_final <- mslq %>%
 
 ```
 
+
 #### 3. Join together the data files by their common columns
 
 ```{r join_data}
@@ -75,6 +87,7 @@ joined_data <- as_tibble(merge(demo_final,
                                mslq_final))
 
 ```
+
 
 #### 4. Use select to retain only the variables you need for your chosen research design (including the user ID).
 
@@ -88,49 +101,60 @@ selected_data <- select(joined_data,
 
 ```
 
+
 #### 5. If necessary, use a filter to retain only the observations you need. For example, you might need to delete participants above a certain age, or only use mature students etc.
 
 ```{r filter_option}
 
 # convert to data.frame and drop NaNs
-filtered_data <- data.frame(drop_na(selected_data))
+data <- data.frame(drop_na(selected_data))
 
 ```
+
 
 #### 6. Use `summary()` or `str()` to check what type of variable each variable is. Recode any necessary variables as factors and, if you would like to, change numeric codes (e.g., 1 for native speaker) into words to make it easier to read the output. 
 
 ```{r check_type}
 
+# data info
+summary_stats <- summary(data)
+
+```
+
+``` {r marcia-count_distribution}
+
 # group by count
-data_count <- data.frame(filtered_data %>% 
-                           count(user_sex))
+data_count <- (data %>% 
+                 count(user_sex))
 
 # MSLQ variables
-intrinsic <- c(names(filtered_data)[str_detect(names(filtered_data), 
-                                               "intrinsic")])
-help <- c(names(filtered_data)[str_detect(names(filtered_data), 
-                                          "help")])
+subscales <- c("intrinsic", 
+               "help")
+help      <- c(names(data)[str_detect(names(data), 
+                                      "help")])
+intrinsic <- c(names(data)[str_detect(names(data), 
+                                      "intrinsic")])
 
 # restructure
-data <- pivot_longer(filtered_data,
-                     cols=c(intrinsic, help),
-                     names_to="item",
-                     values_to="response") %>%
+data_distribution <- pivot_longer(data,
+                                  cols=c(intrinsic, help),
+                                  names_to="item",
+                                  values_to="response") %>% 
   mutate(., 
          user_sex = case_when(user_sex %in% c("nonbinary",
                                               "na") ~ "non-female",
                               user_sex == "male"    ~ "non-female",
                               user_sex == "female"  ~ "female"))
 
-# variables
-gender <- c(unique(data$user_sex))
+# population variable
+gender   <- c(unique(data_distribution$user_sex))
 n_gender <- c(sum(data_count$n[data_count$user_sex == "female"]),
               sum(data_count$n[data_count$user_sex != "female"]))
 
-# plotting format
+# plotting colours
+black    = "#000000"
 grey     = "#999999"
 yellow   = "#E69F00"
-cyanblue = "#56B4E9"
 
 # plot gender counts
 jpeg(file="plots/count.jpeg")
@@ -146,12 +170,12 @@ dev.off()
 
 # plot data distribution
 jpeg(file="plots/distribution.jpeg")
-ggplot(data=data, 
+ggplot(data=data_distribution, 
        mapping=aes(x=response, color=user_sex, fill=user_sex)) + 
   geom_histogram(binwidth=.5, position="dodge") + 
   facet_wrap(facet=vars(item)) +
-  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
-  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) + 
+  scale_color_manual(values=c(grey, yellow)) +
+  scale_fill_manual(values=c(grey, yellow)) + 
   theme(legend.position="top")
 dev.off()
 
@@ -164,23 +188,47 @@ rm(demo,
    selected_data)
 
 ```
-
 #### 7. Calculate the mean score for each participant for each sub-scale. There are a few ways you can do this but helpfully the Experimentum documentation provides example code to make this easier - shown below. For now, you just need to adapt the below code for the variables you need. You may also want to change the `na.rm = TRUE` for the calculation of means depending on whether you want to only include participants who completed all questions.
 
 At the top of the code chunk below, change `eval = FALSE` to `eval = TRUE` once you have amended your code. The reason it is currently set to FALSE is to allow the file to knit. `eval = FALSE` says ignore the code chunk. `eval = TRUE` says run the code chunk
 
 
-```{r desc, eval = FALSE}
+```{r desc, eval = TRUE}
+
 dat_means <- data %>% # change data to the name of the data object you want to work from
-  gather(var, val, question_1:question_5) %>% # change question_1:question_5 to select the questions for your 1st sub-scale 
+  gather(var, val, intrinsic_1:intrinsic_4) %>% # change question_1:question_5 to select the questions for your 1st sub-scale 
   group_by_at(vars(-val, -var)) %>% # group by everything except the val and var columns, don't change this 
-  summarise(scale1_mean = mean(val, na.rm = TRUE)) %>% # change anxiety_mean to the name of your 1st sub-scale
+  summarise(intrinsic_mean = mean(val, na.rm = TRUE)) %>% # change anxiety_mean to the name of your 1st sub-scale
   ungroup() %>% # always ungroup! 
-  gather(var, val, question_1:question_5) %>% # change question_1:question_5 to select the questions for your 2nd scale
+  gather(var, val, help_1:help_4) %>% # change question_1:question_5 to select the questions for your 2nd scale
   group_by_at(vars(-val, -var)) %>% 
-  summarise(scale2_mean = mean(val, na.rm = TRUE)) %>% # does not return sums with missing items 
-  ungroup() 
+  summarise(help_mean = mean(val, na.rm = TRUE)) %>% # does not return sums with missing items 
+  ungroup()
+
 ```
+
+``` {r marcia-standard_error}
+
+# vec = dat_means$intrinsic_mean[dat_means$user_sex == "female"]
+# sd(vec)/sqrt(length(vec))
+
+```
+
+``` {r marcia-group genders and subscales}
+
+dat_means <- mutate(dat_means, 
+             user_sex = case_when(user_sex %in% c("nonbinary",
+                                                  "na") ~ "non-female",
+                                  user_sex == "male"    ~ "non-female",
+                                  user_sex == "female"  ~ "female"))
+
+dat_means_grouped <-  pivot_longer(dat_means,
+                      cols=c(intrinsic_mean, help_mean),
+                      names_to="subscale",
+                      values_to="mean")
+
+```
+
 
 #### 8. You now have the dataset in the format that you need for analysis. You could have actually combined all of the above steps together in one mega pipe-line of code if you felt confident but when starting it helps to break it down. Next, you should visualise the data for each analysis.
 
@@ -188,14 +236,37 @@ t-test visualisation (violin plot with boxplot?)
 
 ```{r ttest_vis}
 
+intrinsic_mean = subset(dat_means_grouped, 
+                        subscale == "intrinsic_mean")
+
+jpeg(file="plots/boxplots.jpeg")
+ggplot(data=intrinsic_mean,
+       mapping=aes(x=subscale, y=mean, color=user_sex, fill=user_sex)) + 
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_boxplot(width=0.07, position=position_dodge(width=0.9)) +
+  scale_color_manual(values=c(black, black)) +
+  scale_fill_manual(values=c(grey, yellow)) + 
+  theme(legend.position="top")
+dev.off()
+
 ```
 
 correlation visualisation (scatterplot?)
 
 ```{r corr_vis}
 
-```
+female_data = subset(dat_means, 
+                     user_sex == "female")
 
+jpeg(file="plots/correlation.jpeg")
+ggplot(female_data, 
+       aes(x=intrinsic_mean, 
+           y=help_mean)) + 
+  geom_point() +
+  geom_smooth(method=lm, se=TRUE)
+dev.off()
+
+```
 
 #### 9. Now you should check that the data meets the assumptions of the tests you want to conduct.
 
@@ -210,6 +281,7 @@ correlation assumptions (normality, linearity, homeoscedasticity, etc.)
 ```{r cor_assump}
 
 ```
+
 
 
 #### 10. Finally, you can conduct your statistical analyses. Don't forget to calculate effect sizes for the t-tests!
