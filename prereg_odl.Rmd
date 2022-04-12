@@ -133,6 +133,7 @@ yellow   = "#E69F00"
 cyanblue = "#56B4E9"
 
 # plot gender counts
+jpeg(file="plots/count.jpeg")
 barplot(data_count$n, 
         names.arg=data_count$user_sex,
         ylab="n", xlab="user_sex",
@@ -141,8 +142,10 @@ legend("topright",
        c(sprintf("%s = %i", gender[1], n_gender[1]), 
          sprintf("%s = %i", gender[2], n_gender[2])), 
        fill = c(grey, yellow))
+dev.off()
 
 # plot data distribution
+jpeg(file="plots/distribution.jpeg")
 ggplot(data=data, 
        mapping=aes(x=response, color=user_sex, fill=user_sex)) + 
   geom_histogram(binwidth=.5, position="dodge") + 
@@ -150,6 +153,7 @@ ggplot(data=data,
   scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
   scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) + 
   theme(legend.position="top")
+dev.off()
 
 # remove raw data objects
 rm(demo, 
