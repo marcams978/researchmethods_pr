@@ -1,0 +1,237 @@
+---
+title: "Pre-registration for Group [insert group number]"
+author: "1234567, 2345678, 3456789, 4567890, 09887653, 9876543" # replace with own GUIDs
+output: word_document
+---
+
+#	1. Present your main research questions and hypotheses being tested in this study along with a concise rationale for each hypothesis.
+
+
+
+# 2. Describe the key variables specifying how they will be measured, how many levels they have, and how participants will be assigned (if relevant).
+
+
+
+# 3. Describe your precise rule(s) for including and/or excluding observations and/or participants.
+
+
+
+# 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.
+
+
+
+# 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size. 
+
+
+# References
+
+
+# Analysis code
+
+This template assumes that you will be running one t-test and a correlation, if you have decided to do something more complex then this template may not fit your needs. Some of the code has been completed for you to clean up the raw questionnaire output from Experimentum. Remember to knit the file after each step, it will make it easy to spot if you have made an error.
+
+Finally, remember that the pilot data is a small sample compared to the larger dataset that you will work with for the full quantitative report. There may be missing data or types of participants in the full data set that aren't present in this sample.
+
+**You can delete the above instructions before you knit and submit your final pre-reg**
+
+#### 1. Load in packages and data
+
+```{r library_data}
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+# you will need to add extra packages in here to do the rest of your analyses
+
+demo <- read_csv("demographics_2021_pilot.csv")
+mslq <- read_csv("MSLQ_2021_pilot.csv")
+
+```
+
+#### 2. Clean up the data
+
+Run the below code - don't change anything. This code will clean up the Experiment data a little bit to help you on your way. 
+
+```{r data_clean}
+
+demo_final <- demo %>% 
+  group_by(user_id, q_id) %>% 
+  filter(session_id == min(session_id), endtime == min(endtime)) %>% 
+  filter(row_number() == 1) %>% 
+  ungroup() %>% 
+  filter(user_status %in% c("guest", "registered")) %>%
+  select(user_id, user_sex, user_age, q_name, dv) %>%
+  pivot_wider(names_from = q_name, values_from = dv)
+
+mslq_final <- mslq %>% 
+  group_by(user_id, q_id) %>% 
+  filter(session_id == min(session_id), endtime == min(endtime)) %>% 
+  filter(row_number() == 1) %>% 
+  ungroup() %>% 
+  filter(user_status %in% c("guest", "registered")) %>%
+  select(user_id, user_sex, user_age, q_name, dv) %>%
+  arrange(q_name) %>%
+  pivot_wider(names_from = q_name, values_from = dv)
+
+```
+
+#### 3. Join together the data files by their common columns
+
+```{r join_data}
+
+# merge data frames
+joined_data <- as_tibble(merge(demo_final, 
+                               mslq_final))
+
+```
+
+#### 4. Use select to retain only the variables you need for your chosen research design (including the user ID).
+
+```{r select_cols}
+
+# select the gender column, and MSLQ variables
+selected_data <- select(joined_data,
+                        user_id, user_sex,
+                        intrinsic_1:intrinsic_4,
+                        help_1:help_4)
+
+```
+
+#### 5. If necessary, use a filter to retain only the observations you need. For example, you might need to delete participants above a certain age, or only use mature students etc.
+
+```{r filter_option}
+
+# convert to data.frame and drop NaNs
+filtered_data <- data.frame(drop_na(selected_data))
+
+```
+
+#### 6. Use `summary()` or `str()` to check what type of variable each variable is. Recode any necessary variables as factors and, if you would like to, change numeric codes (e.g., 1 for native speaker) into words to make it easier to read the output. 
+
+```{r check_type}
+
+# group by count
+data_count <- data.frame(filtered_data %>% 
+                           count(user_sex))
+
+# MSLQ variables
+intrinsic <- c(names(filtered_data)[str_detect(names(filtered_data), 
+                                               "intrinsic")])
+help <- c(names(filtered_data)[str_detect(names(filtered_data), 
+                                          "help")])
+
+# restructure
+data <- pivot_longer(filtered_data,
+                     cols=c(intrinsic, help),
+                     names_to="item",
+                     values_to="response") %>%
+  mutate(., 
+         user_sex = case_when(user_sex %in% c("nonbinary",
+                                              "na") ~ "non-female",
+                              user_sex == "male"    ~ "non-female",
+                              user_sex == "female"  ~ "female"))
+
+# variables
+gender <- c(unique(data$user_sex))
+n_gender <- c(sum(data_count$n[data_count$user_sex == "female"]),
+              sum(data_count$n[data_count$user_sex != "female"]))
+
+# plotting format
+grey   = "#999999"
+yellow = "#E69F00"
+cyanblue = "#56B4E9"
+
+# plot gender counts
+barplot(data_count$n, 
+        names.arg=data_count$user_sex,
+        ylab="n", xlab="user_sex",
+        col=c(grey, yellow, yellow, yellow))
+legend("topright", 
+       c(sprintf("%s = %i", gender[1], n_gender[1]), 
+         sprintf("%s = %i", gender[2], n_gender[2])), 
+       fill = c(grey, yellow))
+
+# plot data distribution
+ggplot(data=data, 
+       mapping=aes(x=response, color=user_sex, fill=user_sex)) + 
+  geom_histogram(binwidth=.5, position="dodge") + 
+  facet_wrap(facet=vars(item)) +
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
+  scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) + 
+  theme(legend.position="top")
+
+# remove raw data objects
+rm(demo, 
+   mslq,
+   demo_final,
+   mslq_final,
+   joined_data,
+   selected_data)
+
+```
+
+#### 7. Calculate the mean score for each participant for each sub-scale. There are a few ways you can do this but helpfully the Experimentum documentation provides example code to make this easier - shown below. For now, you just need to adapt the below code for the variables you need. You may also want to change the `na.rm = TRUE` for the calculation of means depending on whether you want to only include participants who completed all questions.
+
+At the top of the code chunk below, change `eval = FALSE` to `eval = TRUE` once you have amended your code. The reason it is currently set to FALSE is to allow the file to knit. `eval = FALSE` says ignore the code chunk. `eval = TRUE` says run the code chunk
+
+
+```{r desc, eval = FALSE}
+dat_means <- data %>% # change data to the name of the data object you want to work from
+  gather(var, val, question_1:question_5) %>% # change question_1:question_5 to select the questions for your 1st sub-scale 
+  group_by_at(vars(-val, -var)) %>% # group by everything except the val and var columns, don't change this 
+  summarise(scale1_mean = mean(val, na.rm = TRUE)) %>% # change anxiety_mean to the name of your 1st sub-scale
+  ungroup() %>% # always ungroup! 
+  gather(var, val, question_1:question_5) %>% # change question_1:question_5 to select the questions for your 2nd scale
+  group_by_at(vars(-val, -var)) %>% 
+  summarise(scale2_mean = mean(val, na.rm = TRUE)) %>% # does not return sums with missing items 
+  ungroup() 
+```
+
+#### 8. You now have the dataset in the format that you need for analysis. You could have actually combined all of the above steps together in one mega pipe-line of code if you felt confident but when starting it helps to break it down. Next, you should visualise the data for each analysis.
+
+t-test visualisation (violin plot with boxplot?)
+
+```{r ttest_vis}
+
+```
+
+correlation visualisation (scatterplot?)
+
+```{r corr_vis}
+
+```
+
+
+#### 9. Now you should check that the data meets the assumptions of the tests you want to conduct.
+
+t-test assumptions (normality, etc.)
+
+```{r ttest_assump}
+
+```
+
+correlation assumptions (normality, linearity, homeoscedasticity, etc.)
+
+```{r cor_assump}
+
+```
+
+
+#### 10. Finally, you can conduct your statistical analyses. Don't forget to calculate effect sizes for the t-tests!
+
+t-test analysis (between or within)
+
+```{r ttest_analysis}
+
+```
+
+correlation analysis (pearson or spearman)
+
+
+```{r cor_analysis}
+
+```
+
+
+
