@@ -192,7 +192,6 @@ rm(demo,
 
 At the top of the code chunk below, change `eval = FALSE` to `eval = TRUE` once you have amended your code. The reason it is currently set to FALSE is to allow the file to knit. `eval = FALSE` says ignore the code chunk. `eval = TRUE` says run the code chunk
 
-
 ```{r desc, eval = TRUE}
 
 dat_means <- data %>% # change data to the name of the data object you want to work from
@@ -227,8 +226,17 @@ dat_means_grouped <-  pivot_longer(dat_means,
                       names_to="subscale",
                       values_to="mean")
 
-```
+jpeg(file="plots/mean_distribution.jpeg")
+ggplot(data=dat_means_grouped, 
+       mapping=aes(x=mean, color=user_sex, fill=user_sex)) + 
+  geom_histogram(binwidth=1, position="dodge") + 
+  facet_wrap(facet=vars(subscale)) +
+  scale_color_manual(values=c(grey, yellow)) +
+  scale_fill_manual(values=c(grey, yellow)) + 
+  theme(legend.position="top")
+dev.off()
 
+```
 
 #### 8. You now have the dataset in the format that you need for analysis. You could have actually combined all of the above steps together in one mega pipe-line of code if you felt confident but when starting it helps to break it down. Next, you should visualise the data for each analysis.
 
@@ -274,6 +282,44 @@ t-test assumptions (normality, etc.)
 
 ```{r ttest_assump}
 
+# kolmogorov-smirnov test for normality
+
+gender_      <- vector(mode="list")
+subscale_    <- vector(mode="list")
+p.value_     <- vector(mode="list")
+d.statistic_ <- vector(mode="list")
+
+count = 1
+
+for (i in seq_along(gender))
+  {
+  for (j in seq_along(subscales))
+    {
+    
+    vec <- 
+      subset(dat_means_grouped,
+                user_sex == gender[i]) %>%
+      filter(., 
+             grepl(subscales[j], 
+                   subscale))
+    
+    vec_ks <- ks.test(vec$mean, 
+                      "pnorm")
+    
+    gender_[count]      <- gender[i]
+    subscale_[count]    <- subscales[j]
+    d.statistic_[count] <- vec_ks$statistic
+    p.value_[count]     <- vec_ks$p.value
+    
+    count = count + 1
+    }
+  }
+
+ks_results = tibble(gender_, 
+                    subscale_,
+                    d.statistic_, 
+                    p.value_)
+ 
 ```
 
 correlation assumptions (normality, linearity, homeoscedasticity, etc.)
