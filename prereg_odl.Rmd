@@ -128,21 +128,6 @@ data <- data.frame(drop_na(selected_data))
 # data info
 summary_stats <- summary(data)
 
-# group non-female observations
-data <- mutate(data,
-               user_sex = case_when(user_sex %in% c("nonbinary",
-                                                    "na") ~ "non-female",
-                                  user_sex == "male"      ~ "non-female",
-                                  user_sex == "female"    ~ "female"))
-
-```
-
-``` {r marcia-count_distribution, eval = FALSE}
-
-# group by count
-data_count <- (data %>% 
-                 count(user_sex))
-
 # MSLQ variables
 subscales <- c("intrinsic", 
                "help")
@@ -151,18 +136,29 @@ help      <- c(names(data)[str_detect(names(data),
 intrinsic <- c(names(data)[str_detect(names(data), 
                                       "intrinsic")])
 
+# group non-female observations
+data <- mutate(data,
+               user_sex = case_when(user_sex %in% c("nonbinary",
+                                                    "na") ~ "non-female",
+                                  user_sex == "male"      ~ "non-female",
+                                  user_sex == "female"    ~ "female"))
+
+# group by count
+data_count <- (data %>% 
+                 count(user_sex))
+
 # restructure
 data_distribution <- pivot_longer(data,
                                   cols=c(intrinsic, help),
                                   names_to="item",
                                   values_to="response")
 
-# population variable
+# gender variables
 gender   <- c(unique(data_distribution$user_sex))
 n_gender <- c(sum(data_count$n[data_count$user_sex == "female"]),
               sum(data_count$n[data_count$user_sex != "female"]))
 
-# plotting colours
+# plotting variables
 black    = "#000000"
 grey     = "#999999"
 yellow   = "#E69F00"
@@ -189,14 +185,6 @@ ggplot(data=data_distribution,
   scale_fill_manual(values=c(grey, yellow)) + 
   theme(legend.position="top")
 dev.off()
-
-# remove raw data objects
-rm(demo, 
-   mslq,
-   demo_final,
-   mslq_final,
-   joined_data,
-   selected_data)
 
 ```
 
@@ -268,12 +256,7 @@ t-test assumptions (normality, etc.)
 
 ```{r ttest_assump, include=FALSE}
 
-# t-test intrinsic difference between female and non-female 
-# effect size
-
-
-
-# kolmogorov-smirnov test for normality
+# shapiro-wilk test for normality
 # separated for gender and subscale
 
 gender_      <- vector(mode="list")
@@ -295,23 +278,25 @@ for (i in seq_along(gender))
              grepl(subscales[j], 
                    subscale))
     
-    vec_ks <- ks.test(vec$mean, "pnorm", 
-                      mean(vec$mean), sd(vec$mean))
+    vec_sw <- shapiro.test(vec$mean)
     
     gender_[count]      <- gender[i]
     subscale_[count]    <- subscales[j]
-    d.statistic_[count] <- vec_ks$statistic
-    p.value_[count]     <- vec_ks$p.value
+    d.statistic_[count] <- vec_sw$statistic
+    p.value_[count]     <- vec_sw$p.value
     
     count = count + 1
     
     }
   }
 
-ks_results = tibble(gender_, 
-                    subscale_,
-                    d.statistic_, 
-                    p.value_)
+sw_results     <- tibble(gender_, 
+                         subscale_,
+                         d.statistic_, 
+                         p.value_)
+
+gender_results <- tibble("gender"            = gender,
+                         "num. observations" = n_gender)
 
 jpeg(file="plots/mean_distribution.jpeg")
 ggplot(data=dat_means_grouped,
@@ -348,6 +333,27 @@ dev.off()
 
 ```
 
+``` {r m.clean_vars, include=FALSE} 
+
+# remove raw data objects
+rm(demo, 
+   mslq,
+   demo_final,
+   mslq_final,
+   joined_data,
+   selected_data)
+
+rm(vec,
+   vec_sw,
+   gender_,
+   p.value_,
+   subscale_,
+   d.statistic_,
+   data_count,
+   data_distribution,
+   lingress_model)
+
+```
 
 #### 10. Finally, you can conduct your statistical analyses. Don't forget to calculate effect sizes for the t-tests!
 
@@ -355,15 +361,36 @@ t-test analysis (between or within)
 
 ```{r ttest_analysis}
 
-# (marcia) I think we need to do a non-parametric test for female vs non-female - maybe the Kruskal-Wallis. 
+# cohen's d
 
+mean_diff = mean(female_data$intrinsic_mean) - mean(non.female_data$intrinsic_mean)
 
+sum_var   = var(female_data$intrinsic_mean) + var(non.female_data$intrinsic_mean)
+
+d <- mean_diff/sqrt((sum_var)/2)
+
+# welch t-test: unequal variance
+
+t <- t.test(female_data$intrinsic_mean, non.female_data$intrinsic_mean)
+
+t.test_results <- tibble("cohen's d" = d,
+                         "welch's t" = t$statistic,
+                         "p-value"   = t$p.value)
 
 ```
 
 correlation analysis (pearson or spearman)
 
 ```{r cor_analysis}
+
+# spearman: ordinal data
+
+s <- cor.test(female_data$intrinsic_mean, female_data$help_mean, method="spearman",
+              conf.level=1-alpha, 
+              alternative="two.sided")
+
+spearman_results <- tibble("rho" = s$statistic,
+                           "p-value" = s$p.value)
 
 ```
 
