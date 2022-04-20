@@ -21,11 +21,14 @@ T-test hypothesis       : Female students will report more intrinsic goal orient
 **# 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.**
 
 Correlation assumptions : normality, linearity, level of measurement, related pairs
-T-test assumptions      : normality, linearity, homogeneity of variance, independent observations
+T-test assumptions      : normality, effect size, 
 
 **# 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size.**
 
-
+alpha : 0.05 (our significance level)
+      : The odds of saying there is a relationship difference or gain when in fact there is not one
+power : 0.80 (statistical, 1-beta) 
+      : The odds of saying there is a relationship difference or gain when in fact there is one
 
 # References
 
@@ -41,7 +44,7 @@ Finally, remember that the pilot data is a small sample compared to the larger d
 
 #### 1. Load in packages and data
 
-```{r library_data}
+```{r library_data, include=FALSE}
 
 library(broom)
 library(dplyr)
@@ -55,11 +58,12 @@ mslq <- read_csv("MSLQ_2021_pilot.csv")
 
 ```
 
+
 #### 2. Clean up the data
 
 Run the below code - don't change anything. This code will clean up the Experiment data a little bit to help you on your way. 
 
-```{r data_clean}
+```{r data_clean, include=FALSE}
 
 demo_final <- demo %>% 
   group_by(user_id, q_id) %>% 
@@ -82,9 +86,10 @@ mslq_final <- mslq %>%
 
 ```
 
+
 #### 3. Join together the data files by their common columns
 
-```{r join_data}
+```{r join_data, include=FALSE}
 
 # merge data frames
 joined_data <- as_tibble(merge(demo_final, 
@@ -92,9 +97,10 @@ joined_data <- as_tibble(merge(demo_final,
 
 ```
 
+
 #### 4. Use select to retain only the variables you need for your chosen research design (including the user ID).
 
-```{r select_cols}
+```{r select_cols, include=FALSE}
 
 # select the gender column, and MSLQ variables
 selected_data <- select(joined_data,
@@ -104,18 +110,20 @@ selected_data <- select(joined_data,
 
 ```
 
+
 #### 5. If necessary, use a filter to retain only the observations you need. For example, you might need to delete participants above a certain age, or only use mature students etc.
 
-```{r filter_option}
+```{r filter_option, include=FALSE}
 
 # convert to data.frame and drop NaNs
 data <- data.frame(drop_na(selected_data))
 
 ```
 
+
 #### 6. Use `summary()` or `str()` to check what type of variable each variable is. Recode any necessary variables as factors and, if you would like to, change numeric codes (e.g., 1 for native speaker) into words to make it easier to read the output. 
 
-```{r check_type}
+```{r check_type, include=FALSE}
 
 # data info
 summary_stats <- summary(data)
@@ -129,7 +137,7 @@ data <- mutate(data,
 
 ```
 
-``` {r marcia-count_distribution}
+``` {r marcia-count_distribution, eval = FALSE}
 
 # group by count
 data_count <- (data %>% 
@@ -192,11 +200,12 @@ rm(demo,
 
 ```
 
+
 #### 7. Calculate the mean score for each participant for each sub-scale. There are a few ways you can do this but helpfully the Experimentum documentation provides example code to make this easier - shown below. For now, you just need to adapt the below code for the variables you need. You may also want to change the `na.rm = TRUE` for the calculation of means depending on whether you want to only include participants who completed all questions.
 
 At the top of the code chunk below, change `eval = FALSE` to `eval = TRUE` once you have amended your code. The reason it is currently set to FALSE is to allow the file to knit. `eval = FALSE` says ignore the code chunk. `eval = TRUE` says run the code chunk
 
-```{r desc, eval = TRUE}
+```{r desc, eval = TRUE, include=FALSE}
 
 dat_means <- data %>% # change data to the name of the data object you want to work from
   gather(var, val, intrinsic_1:intrinsic_4) %>% # change question_1:question_5 to select the questions for your 1st sub-scale 
@@ -210,11 +219,12 @@ dat_means <- data %>% # change data to the name of the data object you want to w
 
 ```
 
+
 #### 8. You now have the dataset in the format that you need for analysis. You could have actually combined all of the above steps together in one mega pipe-line of code if you felt confident but when starting it helps to break it down. Next, you should visualise the data for each analysis.
 
 t-test visualisation (violin plot with boxplot?)
 
-```{r ttest_vis}
+```{r ttest_vis, include=FALSE}
 
 dat_means_grouped <-  pivot_longer(dat_means,
                       cols=c(intrinsic_mean, help_mean),
@@ -235,9 +245,12 @@ dev.off()
 
 correlation visualisation (scatterplot?)
 
-```{r corr_vis}
+```{r corr_vis, include=FALSE}
 
-female_data <- subset(dat_means, user_sex == "female")
+female_data     <- subset(dat_means, 
+                          user_sex == "female")
+non.female_data <- subset(dat_means,
+                          user_sex == "non-female")
 
 jpeg(file="plots/correlation.jpeg")
 ggplot(data=female_data, 
@@ -248,11 +261,17 @@ dev.off()
 
 ```
 
+
 #### 9. Now you should check that the data meets the assumptions of the tests you want to conduct.
 
 t-test assumptions (normality, etc.)
 
-```{r ttest_assump}
+```{r ttest_assump, include=FALSE}
+
+# t-test intrinsic difference between female and non-female 
+# effect size
+
+
 
 # kolmogorov-smirnov test for normality
 # separated for gender and subscale
@@ -276,7 +295,8 @@ for (i in seq_along(gender))
              grepl(subscales[j], 
                    subscale))
     
-    vec_ks <- ks.test(vec$mean, "pnorm")
+    vec_ks <- ks.test(vec$mean, "pnorm", 
+                      mean(vec$mean), sd(vec$mean))
     
     gender_[count]      <- gender[i]
     subscale_[count]    <- subscales[j]
@@ -307,7 +327,7 @@ dev.off()
 
 correlation assumptions (normality, linearity, homeoscedasticity, etc.)
 
-```{r cor_assump}
+```{r cor_assump, include=FALSE}
 
 # red lines should be flat for both plots
 # need to check for statistical equations for p-value
@@ -328,6 +348,7 @@ dev.off()
 
 ```
 
+
 #### 10. Finally, you can conduct your statistical analyses. Don't forget to calculate effect sizes for the t-tests!
 
 t-test analysis (between or within)
@@ -335,6 +356,8 @@ t-test analysis (between or within)
 ```{r ttest_analysis}
 
 # (marcia) I think we need to do a non-parametric test for female vs non-female - maybe the Kruskal-Wallis. 
+
+
 
 ```
 
