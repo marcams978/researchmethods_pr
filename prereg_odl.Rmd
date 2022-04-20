@@ -1,7 +1,11 @@
 ---
-title: "Pre-registration for Group 14" 
-author: "2608549s, 9404607s, 2704012l, 2723274s, 2719030s, 22716710s" 
-output: word_document
+title: "Pre-registration for Group 14"
+author: "2608549s, 9404607s, 2704012l, 2723274s, 2719030s, 22716710s"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 # Questions
@@ -44,7 +48,7 @@ Finally, remember that the pilot data is a small sample compared to the larger d
 
 #### 1. Load in packages and data
 
-```{r library_data, include=FALSE}
+```{r library_data}
 
 library(broom)
 library(dplyr)
@@ -63,7 +67,7 @@ mslq <- read_csv("MSLQ_2021_pilot.csv")
 
 Run the below code - don't change anything. This code will clean up the Experiment data a little bit to help you on your way. 
 
-```{r data_clean, include=FALSE}
+```{r data_clean}
 
 demo_final <- demo %>% 
   group_by(user_id, q_id) %>% 
@@ -89,7 +93,7 @@ mslq_final <- mslq %>%
 
 #### 3. Join together the data files by their common columns
 
-```{r join_data, include=FALSE}
+```{r join_data}
 
 # merge data frames
 joined_data <- as_tibble(merge(demo_final, 
@@ -100,7 +104,7 @@ joined_data <- as_tibble(merge(demo_final,
 
 #### 4. Use select to retain only the variables you need for your chosen research design (including the user ID).
 
-```{r select_cols, include=FALSE}
+```{r select_cols}
 
 # select the gender column, and MSLQ variables
 selected_data <- select(joined_data,
@@ -113,7 +117,7 @@ selected_data <- select(joined_data,
 
 #### 5. If necessary, use a filter to retain only the observations you need. For example, you might need to delete participants above a certain age, or only use mature students etc.
 
-```{r filter_option, include=FALSE}
+```{r filter_option}
 
 # convert to data.frame and drop NaNs
 data <- data.frame(drop_na(selected_data))
@@ -123,7 +127,7 @@ data <- data.frame(drop_na(selected_data))
 
 #### 6. Use `summary()` or `str()` to check what type of variable each variable is. Recode any necessary variables as factors and, if you would like to, change numeric codes (e.g., 1 for native speaker) into words to make it easier to read the output. 
 
-```{r check_type, include=FALSE}
+```{r check_type}
 
 # data info
 summary_stats <- summary(data)
@@ -164,7 +168,7 @@ grey     = "#999999"
 yellow   = "#E69F00"
 
 # plot gender counts
-jpeg(file="plots/count.jpeg")
+# jpeg(file="plots/count.jpeg")
 barplot(data_count$n, 
         names.arg=data_count$user_sex,
         ylab="n", xlab="user_sex",
@@ -173,10 +177,10 @@ legend("topright",
        c(sprintf("%s = %i", gender[1], n_gender[1]), 
          sprintf("%s = %i", gender[2], n_gender[2])), 
        fill = c(grey, yellow))
-dev.off()
+# dev.off()
 
 # plot data distribution
-jpeg(file="plots/distribution.jpeg")
+# jpeg(file="plots/distribution.jpeg")
 ggplot(data=data_distribution, 
        mapping=aes(x=response, color=user_sex, fill=user_sex)) + 
   geom_histogram(binwidth=.5, position="dodge") + 
@@ -184,7 +188,7 @@ ggplot(data=data_distribution,
   scale_color_manual(values=c(grey, yellow)) +
   scale_fill_manual(values=c(grey, yellow)) + 
   theme(legend.position="top")
-dev.off()
+# dev.off()
 
 ```
 
@@ -193,7 +197,7 @@ dev.off()
 
 At the top of the code chunk below, change `eval = FALSE` to `eval = TRUE` once you have amended your code. The reason it is currently set to FALSE is to allow the file to knit. `eval = FALSE` says ignore the code chunk. `eval = TRUE` says run the code chunk
 
-```{r desc, eval = TRUE, include=FALSE}
+```{r desc, eval = TRUE}
 
 dat_means <- data %>% # change data to the name of the data object you want to work from
   gather(var, val, intrinsic_1:intrinsic_4) %>% # change question_1:question_5 to select the questions for your 1st sub-scale 
@@ -212,14 +216,14 @@ dat_means <- data %>% # change data to the name of the data object you want to w
 
 t-test visualisation (violin plot with boxplot?)
 
-```{r ttest_vis, include=FALSE}
+```{r ttest_vis}
 
 dat_means_grouped <-  pivot_longer(dat_means,
                       cols=c(intrinsic_mean, help_mean),
                       names_to="subscale",
                       values_to="mean")
 
-jpeg(file="plots/boxplots.jpeg")
+# jpeg(file="plots/boxplots.jpeg")
 ggplot(data=dat_means_grouped,
        mapping=aes(x=subscale, y=mean, color=user_sex, fill=user_sex)) + 
   geom_violin(trim=FALSE, alpha=0.5) +
@@ -227,25 +231,25 @@ ggplot(data=dat_means_grouped,
   scale_color_manual(values=c(black, black)) +
   scale_fill_manual(values=c(grey, yellow)) + 
   theme(legend.position="top")
-dev.off()
+# dev.off()
 
 ```
 
 correlation visualisation (scatterplot?)
 
-```{r corr_vis, include=FALSE}
+```{r corr_vis}
 
 female_data     <- subset(dat_means, 
                           user_sex == "female")
 non.female_data <- subset(dat_means,
                           user_sex == "non-female")
 
-jpeg(file="plots/correlation.jpeg")
+# jpeg(file="plots/correlation.jpeg")
 ggplot(data=female_data, 
        aes(x=intrinsic_mean, 
            y=help_mean)) + 
   geom_point()
-dev.off()
+# dev.off()
 
 ```
 
@@ -254,7 +258,7 @@ dev.off()
 
 t-test assumptions (normality, etc.)
 
-```{r ttest_assump, include=FALSE}
+```{r ttest_assump}
 
 # shapiro-wilk test for normality
 # separated for gender and subscale
@@ -298,7 +302,7 @@ sw_results     <- tibble(gender_,
 gender_results <- tibble("gender"            = gender,
                          "num. observations" = n_gender)
 
-jpeg(file="plots/mean_distribution.jpeg")
+# jpeg(file="plots/mean_distribution.jpeg")
 ggplot(data=dat_means_grouped,
        mapping=aes(x=mean, color=user_sex, fill=user_sex)) +
   geom_histogram(binwidth=1, position="dodge") +
@@ -306,13 +310,15 @@ ggplot(data=dat_means_grouped,
   scale_color_manual(values=c(grey, yellow)) +
   scale_fill_manual(values=c(grey, yellow)) +
   theme(legend.position="top")
-dev.off()
+# dev.off()
+
+print(sw_results)
  
 ```
 
 correlation assumptions (normality, linearity, homeoscedasticity, etc.)
 
-```{r cor_assump, include=FALSE}
+```{r cor_assump}
 
 # red lines should be flat for both plots
 # need to check for statistical equations for p-value
@@ -322,18 +328,18 @@ correlation assumptions (normality, linearity, homeoscedasticity, etc.)
 lingress_model <- lm(data=female_data,
                      help_mean ~ intrinsic_mean)
 
-jpeg(file="plots/data_linearity.jpeg")
+# jpeg(file="plots/data_linearity.jpeg")
 plot(lingress_model, 1)
-dev.off()
+# dev.off()
 
 # test for homoscedasticity
-jpeg(file="plots/data_homoscedasticity.jpeg")
+# jpeg(file="plots/data_homoscedasticity.jpeg")
 plot(lingress_model, 3)
-dev.off()
+# dev.off()
 
 ```
 
-``` {r m.clean_vars, include=FALSE} 
+``` {r m.clean_vars} 
 
 # remove raw data objects
 rm(demo, 
@@ -352,6 +358,13 @@ rm(vec,
    data_count,
    data_distribution,
    lingress_model)
+
+rm(i, j,
+   count,
+   gender,
+   n_gender,
+   help, 
+   intrinsic)
 
 ```
 
@@ -377,6 +390,8 @@ t.test_results <- tibble("cohen's d" = d,
                          "welch's t" = t$statistic,
                          "p-value"   = t$p.value)
 
+print(t.test_results)
+
 ```
 
 correlation analysis (pearson or spearman)
@@ -386,11 +401,13 @@ correlation analysis (pearson or spearman)
 # spearman: ordinal data
 
 s <- cor.test(female_data$intrinsic_mean, female_data$help_mean, method="spearman",
-              conf.level=1-alpha, 
+              conf.level=0.95, 
               alternative="two.sided")
 
 spearman_results <- tibble("rho" = s$statistic,
                            "p-value" = s$p.value)
+
+print(spearman_results)
 
 ```
 
