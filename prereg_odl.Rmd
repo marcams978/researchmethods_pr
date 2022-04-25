@@ -1,9 +1,10 @@
 ---
-title: "Pre-registration for Group 14"
+title: "A pre-registration analysis of the relationship between intrinsic goal orientation and help-seeing and the effect of reporting as female or as non-female on intrinsic goal orientation."
+group: "14"
 author: "2608549s, 9404607s, 2704012l, 2723274s, 2719030s, 22716710s"
 output:
   word_document: default
-  html_document:
+  html_document: default
     df_print: paged
   pdf_document: default
 ---
@@ -14,25 +15,51 @@ output:
 
 Main research questions : Do female students report more intrinsic goal orientation than students who do not report as female? 
                           Is intrinsic goal orientation related to self-reported help-seeking in female students?
+
   
-Correlation hypothesis  : Intrinsic goal orientation will have a positive correlation to self-reported help-seeking. 
+Correlation hypothesis  : In female students, intrinsic goal orientation will have a positive correlation to self-reported help-seeking. 
+
 T-test hypothesis       : Female students will report more intrinsic goal orientation than students who do not report as female.  
 
 **# 2. Describe the key variables specifying how they will be measured, how many levels they have, and how participants will be assigned (if relevant).**
 
+Demographic variables : Female, Non-female
+Column identifier     : user_sex
+Grouping              : Female     = (user_sex == "female")
+                      : Non-female = (user_sex == "male" or "nonbinary" or "na")
+                      
+MSLQ variables
+Motivation scale        : (Subcategory) Value
+                        : (Subscale)    Intrinsic goal orientation (4 questions)
+Learning strategy scale : (Subcategory) Resource management
+                        : (Subscale)    Help seeking (4 questions)
+
 **# 3. Describe your precise rule(s) for including and/or excluding observations and/or participants.**
+
+Data from participants with missing fields for user_sex were excluded as we cannot assume the participants gender. 
+
+Data from participants who entered "na" in the user_sex field were grouped with "male" and "nonbinary" for the 'non.female' variable, as we cannot assume whether the participant intended the meaning as "nonbinary" or that they would rather not disclose. 
 
 **# 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.**
 
-Correlation assumptions : normality, linearity, level of measurement, related pairs
-T-test assumptions      : normality, effect size, 
+Correlation assumptions : Paired Spearman's Rank Correlation
+                        : Data are normally distributed
+                        : Data are ordinal/continuous (scale/mean)
+                        : Data are paired
+                        
+T-test assumptions      : Welch T-test
+                        : Data are normally distributed
+                        : Data are ordinal/continuous (scale/mean)
+                        : Data are independent
 
 **# 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size.**
 
-alpha : 0.05 (our significance level)
+Alpha : 0.05 (our significance level)
       : The odds of saying there is a relationship difference or gain when in fact there is not one
-power : 0.80 (statistical, 1-beta) 
+Power : 0.80 (statistical, 1-beta) 
       : The odds of saying there is a relationship difference or gain when in fact there is one
+      
+Desired effect size : 
 
 # References
 
@@ -50,8 +77,12 @@ Finally, remember that the pilot data is a small sample compared to the larger d
 
 ```{r library_data}
 
+# install package - pwr
+
+library(pwr)
 library(broom)
 library(dplyr)
+library(stats)
 library(ggplot2)
 library(tidyverse)
 
@@ -381,6 +412,33 @@ mean_diff = mean(female_data$intrinsic_mean) - mean(non.female_data$intrinsic_me
 sum_var   = var(female_data$intrinsic_mean) + var(non.female_data$intrinsic_mean)
 
 d <- mean_diff/sqrt((sum_var)/2)
+
+# post-hoc power analysis (PHP)
+pwr <- power.t.test(n           = NULL,
+                    delta       = mean_diff,
+                    # sd          = 1,
+                    sig.level   = 0.05,
+                    power       = 0.80,
+                    type        = "two.sample",
+                    alternative = "one.sided")
+
+effect_sizes = c(seq(0.1,1.5,0.1))
+ptab        <- cbind(NULL, NULL) 
+
+for (i in effect_sizes) {
+  pwr_ <- pwr.t.test(d           = i,
+                     sig.level   = 0.05,
+                     power       = 0.8,
+                     type        = "two.sample",
+                     alternative = "greater")
+  ptab <- rbind(ptab, cbind(pwr_$d, pwr_$n))
+}
+
+plot(ptab[,1],
+     ptab[,2],
+     type="b",
+     xlab="effect size",
+     ylab="sample size")
 
 # welch t-test: unequal variance
 
