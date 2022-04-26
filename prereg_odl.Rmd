@@ -264,6 +264,23 @@ ggplot(data=dat_means_grouped,
   theme(legend.position="top")
 # dev.off()
 
+# remove outliers
+female_outliers      <- boxplot(subset(subset(dat_means_grouped, user_sex == "female"), subscale == "help_mean")$mean, plot=FALSE)$out
+non.female_outliers  <- boxplot(subset(subset(dat_means_grouped, user_sex != "female"), subscale == "intrinsic_mean")$mean, plot=FALSE)$out
+
+dat_means_grouped <- dat_means_grouped[-which(subset(subset(dat_means_grouped, user_sex == "female"), subscale == "help_mean")$mean %in% female_outliers),]
+dat_means_grouped <- dat_means_grouped[-which(subset(subset(dat_means_grouped, user_sex != "female"), subscale == "intrinsic_mean")$mean %in% non.female_outliers),]
+
+dat_means <- dat_means[-which(
+  subset(dat_means, user_sex == "female")$help_mean
+  %in% 
+    boxplot(subset(dat_means, user_sex == "female")$help_mean, plot=FALSE)$out),]
+
+dat_means <- dat_means[-which(
+  subset(dat_means, user_sex != "female")$intrinsic_mean
+  %in% 
+    boxplot(subset(dat_means, user_sex != "female")$intrinsic_mean, plot=FALSE)$out),]
+
 ```
 
 correlation visualisation (scatterplot?)
@@ -370,7 +387,7 @@ plot(lingress_model, 3)
 
 ```
 
-``` {r m.clean_vars} 
+``` {r m.clean_vars, eval=FALSE} 
 
 # remove raw data objects
 rm(demo, 
@@ -413,7 +430,7 @@ sum_var   = var(female_data$intrinsic_mean) + var(non.female_data$intrinsic_mean
 
 d <- mean_diff/sqrt((sum_var)/2)
 
-# post-hoc power analysis (PHP)
+# power analysis
 pwr <- power.t.test(n           = NULL,
                     delta       = mean_diff,
                     # sd          = 1,
@@ -429,7 +446,7 @@ for (i in effect_sizes) {
   pwr_ <- pwr.t.test(d           = i,
                      sig.level   = 0.05,
                      power       = 0.8,
-                     type        = "two.sample",
+                     type        = "one.sample",
                      alternative = "greater")
   ptab <- rbind(ptab, cbind(pwr_$d, pwr_$n))
 }
@@ -462,10 +479,26 @@ s <- cor.test(female_data$intrinsic_mean, female_data$help_mean, method="spearma
               conf.level=0.95, 
               alternative="two.sided")
 
-spearman_results <- tibble("rho" = s$statistic,
+spearman_results <- tibble("rho" = s$estimate,
                            "p-value" = s$p.value)
 
-print(spearman_results)
+effect_sizes = c(seq(0.1,1.5,0.02))
+ptab_s <- cbind(NULL, NULL) 
+
+for (i in effect_sizes) {
+  pwr_ <- pwr.t.test(d           = i,
+                     sig.level   = 0.05,
+                     power       = 0.8,
+                     type        = "one.sample",
+                     alternative = "two.sided")
+  ptab_s <- rbind(ptab_s, cbind(pwr_$d, pwr_$n))
+}
+
+plot(ptab[,1],
+     ptab[,2],
+     type="b",
+     xlab="effect size",
+     ylab="sample size")
 
 ```
 
