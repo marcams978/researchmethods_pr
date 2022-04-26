@@ -1,79 +1,15 @@
 ---
-title: "A pre-registration analysis of the relationship between intrinsic goal orientation and help-seeing and the effect of reporting as female or as non-female on intrinsic goal orientation."
-group: "14"
-author: "2608549s, 9404607s, 2704012l, 2723274s, 2719030s, 22716710s"
 output:
-  word_document: default
   html_document: default
-    df_print: paged
   pdf_document: default
 ---
 
-# Questions
-
-**#	1. Present your main research questions and hypotheses being tested in this study along with a concise rationale for each hypothesis.**
-
-Main research questions : Do female students report more intrinsic goal orientation than students who do not report as female? 
-                          Is intrinsic goal orientation related to self-reported help-seeking in female students?
-
-  
-Correlation hypothesis  : In female students, intrinsic goal orientation will have a positive correlation to self-reported help-seeking. 
-
-T-test hypothesis       : Female students will report more intrinsic goal orientation than students who do not report as female.  
-
-**# 2. Describe the key variables specifying how they will be measured, how many levels they have, and how participants will be assigned (if relevant).**
-
-Demographic variables : Female, Non-female
-Column identifier     : user_sex
-Grouping              : Female     = (user_sex == "female")
-                      : Non-female = (user_sex == "male" or "nonbinary" or "na")
-                      
-MSLQ variables
-Motivation scale        : (Subcategory) Value
-                        : (Subscale)    Intrinsic goal orientation (4 questions)
-Learning strategy scale : (Subcategory) Resource management
-                        : (Subscale)    Help seeking (4 questions)
-
-**# 3. Describe your precise rule(s) for including and/or excluding observations and/or participants.**
-
-Data from participants with missing fields for user_sex were excluded as we cannot assume the participants gender. 
-
-Data from participants who entered "na" in the user_sex field were grouped with "male" and "nonbinary" for the 'non.female' variable, as we cannot assume whether the participant intended the meaning as "nonbinary" or that they would rather not disclose. 
-
-**# 4. Describe exactly which inferential analyses you will conduct to examine the main hypotheses, including details of any assumption tests.**
-
-Correlation assumptions : Paired Spearman's Rank Correlation
-                        : Data are normally distributed
-                        : Data are ordinal/continuous (scale/mean)
-                        : Data are paired
-                        
-T-test assumptions      : Welch T-test
-                        : Data are normally distributed
-                        : Data are ordinal/continuous (scale/mean)
-                        : Data are independent
-
-**# 5. Discuss how many observations will be required to determine your smallest effect size of interest, based on your alpha and power, and give rationale for the desired effect size.**
-
-Alpha : 0.05 (our significance level)
-      : The odds of saying there is a relationship difference or gain when in fact there is not one
-Power : 0.80 (statistical, 1-beta) 
-      : The odds of saying there is a relationship difference or gain when in fact there is one
-      
-Desired effect size : 
-
-# References
-
-# Analysis code: intro
-
-This template assumes that you will be running one t-test and a correlation, if you have decided to do something more complex then this template may not fit your needs. Some of the code has been completed for you to clean up the raw questionnaire output from Experimentum. Remember to knit the file after each step, it will make it easy to spot if you have made an error.
-
-Finally, remember that the pilot data is a small sample compared to the larger dataset that you will work with for the full quantitative report. There may be missing data or types of participants in the full data set that aren't present in this sample.
-
-**You can delete the above instructions before you knit and submit your final pre-reg**
 
 # Analysis code
 
 #### 1. Load in packages and data
+
+The "pwr" package needs to be installed to the PC's local in order to run this script. 
 
 ```{r library_data}
 
@@ -93,10 +29,8 @@ mslq <- read_csv("MSLQ_2021_pilot.csv")
 
 ```
 
-
 #### 2. Clean up the data
 
-Run the below code - don't change anything. This code will clean up the Experiment data a little bit to help you on your way. 
 
 ```{r data_clean}
 
@@ -121,7 +55,6 @@ mslq_final <- mslq %>%
 
 ```
 
-
 #### 3. Join together the data files by their common columns
 
 ```{r join_data}
@@ -145,8 +78,9 @@ selected_data <- select(joined_data,
 
 ```
 
-
 #### 5. If necessary, use a filter to retain only the observations you need. For example, you might need to delete participants above a certain age, or only use mature students etc.
+
+As discussed in Question #3, observations with an empty field for user_sex is dropped.
 
 ```{r filter_option}
 
@@ -200,7 +134,7 @@ yellow   = "#E69F00"
 
 # plot gender counts
 # jpeg(file="plots/count.jpeg")
-barplot(data_count$n, 
+barplot(data_count$n, main="Figure 1: Sample size", 
         names.arg=data_count$user_sex,
         ylab="n", xlab="user_sex",
         col=c(grey, yellow, yellow, yellow))
@@ -212,17 +146,17 @@ legend("topright",
 
 # plot data distribution
 # jpeg(file="plots/distribution.jpeg")
-ggplot(data=data_distribution, 
+ggplot(data=data_distribution,
        mapping=aes(x=response, color=user_sex, fill=user_sex)) + 
   geom_histogram(binwidth=.5, position="dodge") + 
   facet_wrap(facet=vars(item)) +
   scale_color_manual(values=c(grey, yellow)) +
   scale_fill_manual(values=c(grey, yellow)) + 
-  theme(legend.position="top")
+  theme(legend.position="top") +
+  ggtitle("Figure 2: Data distribution")
 # dev.off()
 
 ```
-
 
 #### 7. Calculate the mean score for each participant for each sub-scale. There are a few ways you can do this but helpfully the Experimentum documentation provides example code to make this easier - shown below. For now, you just need to adapt the below code for the variables you need. You may also want to change the `na.rm = TRUE` for the calculation of means depending on whether you want to only include participants who completed all questions.
 
@@ -242,13 +176,13 @@ dat_means <- data %>% # change data to the name of the data object you want to w
 
 ```
 
-
 #### 8. You now have the dataset in the format that you need for analysis. You could have actually combined all of the above steps together in one mega pipe-line of code if you felt confident but when starting it helps to break it down. Next, you should visualise the data for each analysis.
 
-t-test visualisation (violin plot with boxplot?)
+T-test visualisation: Based on the graphical representation of our data, the outliers illustrated in Figure 3 were removed before conducting further analysis.
 
 ```{r ttest_vis}
 
+# generate dataframe to restructure help_mean and intrinsic_mean into the same column
 dat_means_grouped <-  pivot_longer(dat_means,
                       cols=c(intrinsic_mean, help_mean),
                       names_to="subscale",
@@ -261,7 +195,8 @@ ggplot(data=dat_means_grouped,
   geom_boxplot(width=0.07, position=position_dodge(width=0.9)) +
   scale_color_manual(values=c(black, black)) +
   scale_fill_manual(values=c(grey, yellow)) + 
-  theme(legend.position="top")
+  theme(legend.position="right") +
+  ggtitle("Figure 3: Violin and boxplots separately for gender and MSLQ subscales") 
 # dev.off()
 
 # remove outliers
@@ -283,7 +218,7 @@ dat_means <- dat_means[-which(
 
 ```
 
-correlation visualisation (scatterplot?)
+Correlation visualisation
 
 ```{r corr_vis}
 
@@ -296,15 +231,15 @@ non.female_data <- subset(dat_means,
 ggplot(data=female_data, 
        aes(x=intrinsic_mean, 
            y=help_mean)) + 
-  geom_point()
+  geom_point() +
+  ggtitle("Figure 4: Scatterplot between help-seeking and intrinsic goal orientation responses in females")
 # dev.off()
 
 ```
 
-
 #### 9. Now you should check that the data meets the assumptions of the tests you want to conduct.
 
-t-test assumptions (normality, etc.)
+T-test assumptions: Normality
 
 ```{r ttest_assump}
 
@@ -357,20 +292,15 @@ ggplot(data=dat_means_grouped,
   facet_wrap(facet=vars(subscale)) +
   scale_color_manual(values=c(grey, yellow)) +
   scale_fill_manual(values=c(grey, yellow)) +
-  theme(legend.position="top")
+  theme(legend.position="right") +
+  ggtitle("Figure 5: Mean data distribution")
 # dev.off()
-
-print(sw_results)
  
 ```
 
-correlation assumptions (normality, linearity, homeoscedasticity, etc.)
+Correlation assumptions: Normality, linearity and homoscedasticity
 
 ```{r cor_assump}
-
-# red lines should be flat for both plots
-# need to check for statistical equations for p-value
-# check to rectify the data
 
 # test for linearity
 lingress_model <- lm(data=female_data,
@@ -378,16 +308,20 @@ lingress_model <- lm(data=female_data,
 
 # jpeg(file="plots/data_linearity.jpeg")
 plot(lingress_model, 1)
+title(main = "Figure 6: Visualisation for linearity",
+      cex.main = 1, line = 1.25, adj = 0)
 # dev.off()
 
 # test for homoscedasticity
 # jpeg(file="plots/data_homoscedasticity.jpeg")
 plot(lingress_model, 3)
+title(main = "Figure 7: Visualisation for homoscedasticity",
+      cex.main = 1, line = 1.25, adj = 0)
 # dev.off()
 
 ```
 
-``` {r m.clean_vars, eval=FALSE} 
+``` {r m.clean_vars, eval=TRUE}
 
 # remove raw data objects
 rm(demo, 
@@ -418,16 +352,13 @@ rm(i, j,
 
 #### 10. Finally, you can conduct your statistical analyses. Don't forget to calculate effect sizes for the t-tests!
 
-t-test analysis (between or within)
+Between-conditions Welch T-test.
 
 ```{r ttest_analysis}
 
 # cohen's d
-
 mean_diff = mean(female_data$intrinsic_mean) - mean(non.female_data$intrinsic_mean)
-
 sum_var   = var(female_data$intrinsic_mean) + var(non.female_data$intrinsic_mean)
-
 d <- mean_diff/sqrt((sum_var)/2)
 
 # power analysis
@@ -455,26 +386,24 @@ plot(ptab[,1],
      ptab[,2],
      type="b",
      xlab="effect size",
-     ylab="sample size")
+     ylab="sample size", 
+     main="Figure 8: Changes to sample size from incremental effect sizes for comparison analysis",
+     cex.main=0.9)
 
 # welch t-test: unequal variance
 
 t <- t.test(female_data$intrinsic_mean, non.female_data$intrinsic_mean)
-
 t.test_results <- tibble("cohen's d" = d,
                          "welch's t" = t$statistic,
                          "p-value"   = t$p.value)
 
-print(t.test_results)
-
 ```
 
-correlation analysis (pearson or spearman)
+Paired-samples Spearman's Rank Correlation.
 
 ```{r cor_analysis}
 
 # spearman: ordinal data
-
 s <- cor.test(female_data$intrinsic_mean, female_data$help_mean, method="spearman",
               conf.level=0.95, 
               alternative="two.sided")
@@ -494,11 +423,13 @@ for (i in effect_sizes) {
   ptab_s <- rbind(ptab_s, cbind(pwr_$d, pwr_$n))
 }
 
-plot(ptab[,1],
-     ptab[,2],
+plot(ptab_s[,1],
+     ptab_s[,2],
      type="b",
      xlab="effect size",
-     ylab="sample size")
+     ylab="sample size", 
+     main="Figure 9: Changes to sample size from incremental effect sizes for correlation analysis",     
+     cex.main=0.9)
 
 ```
 
